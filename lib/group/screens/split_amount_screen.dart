@@ -1,26 +1,26 @@
 //UI to choose between Equal or Custom split and adjust amounts.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:updated_split_application/group/provider/providers_.dart';
 import 'package:updated_split_application/utilis/app_components.dart';
 import 'package:updated_split_application/utilis/color_const.dart';
 import 'package:updated_split_application/utilis/text_style_const.dart';
 import 'package:updated_split_application/views/bottom_nav_screen.dart';
 
-class SplitAmountScreen extends StatelessWidget {
+class SplitAmountScreen extends ConsumerWidget {
   const SplitAmountScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final members = [
-      {'name': 'Vishag V', 'phone': '9876543210', 'amount': 500.0},
-      {'name': 'Rahul M', 'phone': '9988776655', 'amount': 350.0},
-      {'name': 'Anu K', 'phone': '9123456780', 'amount': 150.0},
-    ];
-
-    final double totalAmount = members.fold(
-      0.0,
-      (sum, member) => sum + (member['amount'] as double),
-    );
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final groupInfo = ref.watch(groupInfoProvider);
+    final contactState = ref.watch(contactProvider);
+    final selectedContacts = contactState.selectedIndices.map((index) {
+      final contact = contactState.contacts[index];
+      return {
+        'name': contact.displayName,
+        'phone': contact.phones.isNotEmpty ? contact.phones.first.number : '',
+      };
+    }).toList();
     return Scaffold(
       appBar: AppComponents.appBarStyleWithTitle("Split Amount", context),
       body: Padding(
@@ -31,7 +31,7 @@ class SplitAmountScreen extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Group: Trip to Munnar",
+                "Group Name : ${groupInfo.groupName}",
                 style: AppTextStyles.headingStyle,
               ),
             ),
@@ -39,7 +39,7 @@ class SplitAmountScreen extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Total Amount: ₹${totalAmount.toStringAsFixed(2)}",
+                "Total Amount: ₹${groupInfo.totalAmount.toStringAsFixed(2)}",
                 style: AppTextStyles.subHeadingStyle.copyWith(
                   color: AppColors.primaryColor,
                 ),
@@ -48,7 +48,7 @@ class SplitAmountScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             /// Table Section
-            Expanded(child: GroupMemberAmountTable(members: members)),
+            Expanded(child: GroupMemberAmountTable(members: selectedContacts)),
 
             /// Confirm Button
             SizedBox(
@@ -159,7 +159,7 @@ class GroupMemberAmountTable extends StatelessWidget {
                           child: TextField(
                             enabled: false,
                             controller: TextEditingController(
-                              text: "₹${member['amount'].toStringAsFixed(2)}",
+                              text: "₹${member['amount']}",
                             ),
                             style: AppTextStyles.bodyStyle,
                             decoration: InputDecoration(

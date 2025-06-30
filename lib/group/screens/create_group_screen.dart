@@ -1,23 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:updated_split_application/group/provider/providers_.dart';
 import 'package:updated_split_application/group/screens/add_members_screen.dart';
 import 'package:updated_split_application/utilis/app_components.dart';
 import 'package:updated_split_application/utilis/color_const.dart';
 import 'package:updated_split_application/utilis/text_style_const.dart';
 
-class CreateGroupScreen extends StatefulWidget {
+class CreateGroupScreen extends ConsumerStatefulWidget {
   const CreateGroupScreen({super.key});
 
   @override
-  State<CreateGroupScreen> createState() => _CreateGroupScreenState();
+  ConsumerState<CreateGroupScreen> createState() => _CreateGroupScreenState();
 }
 
-class _CreateGroupScreenState extends State<CreateGroupScreen> {
-  final TextEditingController groupNameController = TextEditingController();
-  final TextEditingController amountController = TextEditingController();
+class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
+  final TextEditingController _groupNameController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
   String selectedSplit = 'Equal';
 
   @override
+  void dispose() {
+    _groupNameController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Access Riverpod state using `ref` here
+    final groupInfo = ref.watch(groupInfoProvider);
+
     return Scaffold(
       appBar: AppComponents.appBarStyleWithTitle(
         "Create Group",
@@ -34,7 +46,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             Text("Group Name", style: AppTextStyles.subHeadingStyle),
             const SizedBox(height: 6),
             TextField(
-              controller: groupNameController,
+              controller: _groupNameController,
               style: AppTextStyles.bodyStyle,
               decoration: InputDecoration(
                 hintText: "Enter group name",
@@ -54,7 +66,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             Text("Total Amount", style: AppTextStyles.subHeadingStyle),
             const SizedBox(height: 6),
             TextField(
-              controller: amountController,
+              controller: _amountController,
               keyboardType: TextInputType.number,
               style: AppTextStyles.bodyStyle,
               decoration: InputDecoration(
@@ -96,22 +108,28 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   ),
                 ),
                 onPressed: () {
+                  final groupName = _groupNameController.text.trim();
+                  final amount = double.tryParse(_amountController.text.trim());
+                  final splitType = selectedSplit;
+                  if (groupName.isEmpty || amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter valid group details"),
+                      ),
+                    );
+                    return;
+                  }
+                  //save state to riverpod
+                  ref.read(groupInfoProvider.notifier).setGroupName(groupName);
+                  ref.read(groupInfoProvider.notifier).setTotalAmount(amount);
+                  ref.read(groupInfoProvider.notifier).setSplitType(splitType);
+                  // print(groupInfo.groupName.toString());
+                  // print(groupInfo.totalAmount);
+                  // print(groupInfo.splitType);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AddMembersScreen()),
                   );
-                  // final groupName = groupNameController.text.trim();
-                  // final amount = double.tryParse(amountController.text.trim());
-
-                  // if (groupName.isEmpty || amount == null || amount <= 0) {
-                  //   ScaffoldMessenger.of(context).showSnackBar(
-                  //     const SnackBar(
-                  //       content: Text("Please enter valid group details"),
-                  //     ),
-                  //   );
-                  //   return;
-                  // }
-
                   // Navigate to next screen with collected data
                 },
                 child: Text(
